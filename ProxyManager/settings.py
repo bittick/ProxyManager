@@ -37,8 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'manager',
     'rest_framework',
+    'celery',
+    'manager',
 ]
 
 MIDDLEWARE = [
@@ -136,5 +137,10 @@ REST_FRAMEWORK = {
 AUTHENTICATION_BACKENDS = [
     'manager.backends.ExtensionUserBackend',
     'django.contrib.auth.backends.ModelBackend',
-    # Другие бэкенды аутентификации по желанию
-]
+    ]
+
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
+CELERY_BROKER_RESUL_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'

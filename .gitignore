@@ -161,3 +161,4 @@ cython_debug/
 *.sqlite3
 /manager/migrations/*
 !/manager/migrations/__init__.py
+.idea

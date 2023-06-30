@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 import jwt
 from datetime import datetime
 from ProxyManager.settings import SECRET_KEY
-
+from .backend_exceptions import InvalidTokenError, UnverifiedAccountError
 
 class ExtensionUser(User):
     extension_groups = models.ManyToManyField(Group, related_name='extension_users')
@@ -16,9 +16,11 @@ class ExtensionUser(User):
         try:
             user = cls.objects.get(jwt_access_token=token)
             if user.username == jwt.decode(token, options={"verify_signature": False}).get('username'):
+                if not user.is_active:
+                    raise UnverifiedAccountError('User account not verified')
                 return user
         except ObjectDoesNotExist:
-            return None
+            raise InvalidTokenError('Token failed to authenticate')
 
     @staticmethod
     def generate_token(username, password, secretkey=SECRET_KEY):
@@ -49,12 +51,29 @@ class ExtensionUser(User):
         verbose_name_plural = 'Extension Users'
 
 
+
+
+class ConfirmationCode(models.Model):
+    code = models.CharField(max_length=5)
+    user_link = models.ForeignKey(to=ExtensionUser, on_delete=models.PROTECT)
+    type = models.CharField(max_length=10)
+
+    class Meta:
+        verbose_name = 'Код подтверждения'
+        verbose_name_plural = 'Коды подтверждения'
+
+
+class Country(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+
 class Proxy(models.Model):
     host = models.CharField(max_length=15)
     port = models.IntegerField()
     username = models.CharField(max_length=30)
     password = models.CharField(max_length=30)
     tag = models.CharField(max_length=30, blank=True, null=True)
+    country = models.ForeignKey(to=Country, on_delete=models.PROTECT, blank=True, null=True)
     counter = models.IntegerField(default=0)
 
     class Meta:
@@ -62,3 +81,6 @@ class Proxy(models.Model):
         verbose_name_plural = 'Proxy models'
 
 
+class DomainList(models.Model):
+    domain = models.CharField(max_length=100, unique=True)
+    country = models.ForeignKey(to=Country, on_delete=models.PROTECT)
