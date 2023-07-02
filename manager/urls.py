@@ -9,6 +9,8 @@ urlpatterns = [
     path('free_proxy', get_free_proxy),
     path('test', test_auth),
     path('ver_code', confirm_code),
-    # path('recover', start_recover_account),
+    path('start_recover', start_account_recovery),
+    path('finish_recover', finish_account_recovery),
+    path('change_password', change_password),
 ]
 

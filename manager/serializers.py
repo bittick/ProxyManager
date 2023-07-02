@@ -9,7 +9,7 @@ import random
 
 class RegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
-    password = serializers.CharField(max_length=128, write_only=True)
+    password = serializers.CharField(min_length=8, max_length=128, write_only=True)
     email = serializers.EmailField(max_length=100)
     user = None
 
@@ -95,8 +95,10 @@ class ConfirmCodeSerializer(serializers.Serializer):
     def verify_recovery_code(self):
         try:
             user = ExtensionUser.objects.get(email=self.email)
-            code_model = ConfirmationCode.objects.get(user_link=user, type='recovery')
-            if code_model.code == self.code:
+            code_models = ConfirmationCode.objects.filter(user_link=user, type='recovery')
+            values = [code_model.code for code_model in code_models]
+            if self.code in values:
+                code_models.delete()
                 return user.jwt_access_token
 
         except ObjectDoesNotExist as e:

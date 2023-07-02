@@ -6,6 +6,7 @@ from datetime import datetime
 from ProxyManager.settings import SECRET_KEY
 from .backend_exceptions import InvalidTokenError, UnverifiedAccountError
 
+
 class ExtensionUser(User):
     extension_groups = models.ManyToManyField(Group, related_name='extension_users')
     extension_permissions = models.ManyToManyField(Permission, related_name='extension_users')
@@ -51,11 +52,9 @@ class ExtensionUser(User):
         verbose_name_plural = 'Extension Users'
 
 
-
-
 class ConfirmationCode(models.Model):
     code = models.CharField(max_length=5)
-    user_link = models.ForeignKey(to=ExtensionUser, on_delete=models.PROTECT)
+    user_link = models.ForeignKey(to=ExtensionUser, on_delete=models.CASCADE)
     type = models.CharField(max_length=10)
 
     class Meta:
