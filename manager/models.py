@@ -5,9 +5,10 @@ import jwt
 from datetime import datetime
 from ProxyManager.settings import SECRET_KEY
 from .backend_exceptions import InvalidTokenError, UnverifiedAccountError
+from django.utils import timezone
 
 
-class ExtensionUser(User):
+class AppUser(User):
     extension_groups = models.ManyToManyField(Group, related_name='extension_users')
     extension_permissions = models.ManyToManyField(Permission, related_name='extension_users')
     jwt_access_token = models.CharField(max_length=100, blank=True, unique=True)
@@ -47,6 +48,11 @@ class ExtensionUser(User):
         secret = self.password + time + secretkey
         return jwt.encode({'username': self.username}, secret, algorithm="HS256")
 
+    def update_last_login(self, commit=True):
+        self.last_login = timezone.now()  # Устанавливаем текущую дату и время
+        if commit:
+            self.save()
+
     class Meta:
         verbose_name = 'Extension User'
         verbose_name_plural = 'Extension Users'
@@ -54,7 +60,7 @@ class ExtensionUser(User):
 
 class ConfirmationCode(models.Model):
     code = models.CharField(max_length=5)
-    user_link = models.ForeignKey(to=ExtensionUser, on_delete=models.CASCADE)
+    user_link = models.ForeignKey(to=AppUser, on_delete=models.CASCADE)
     type = models.CharField(max_length=10)
 
     class Meta:

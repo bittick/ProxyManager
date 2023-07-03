@@ -7,9 +7,9 @@ from rest_framework.views import APIView
 from .serializers import RegistrationSerializer, AuthorizationSerializer, ProxySerializer
 from django.http import JsonResponse
 from functools import wraps
-from .models import ExtensionUser, Proxy, ConfirmationCode
+from .models import AppUser, Proxy, ConfirmationCode
 from .backend_exceptions import InvalidTokenError, UnverifiedAccountError
-from .tools import extension_user_auth
+from .tools import app_user_auth
 
 
 @api_view(['POST'])
@@ -24,7 +24,7 @@ def test(request):
 
 
 @api_view(['POST'])
-@extension_user_auth
+@app_user_auth
 def test_auth(request):
     print(request.user)
     return Response(status=status.HTTP_200_OK)

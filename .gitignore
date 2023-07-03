@@ -162,3 +162,5 @@ cython_debug/
 /manager/migrations/*
 !/manager/migrations/__init__.py
 .idea
+*-schedule
+lsblk_raw

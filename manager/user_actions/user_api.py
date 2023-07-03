@@ -2,11 +2,8 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from manager.models import ExtensionUser
 from manager.serializers import RegistrationSerializer, AuthorizationSerializer, ConfirmCodeSerializer
-from manager.tools import extension_user_auth
-from django.contrib.auth.forms import SetPasswordForm
+from manager.tools import app_user_auth, AppUserPasswordChangeForm
 
 
 class RegistrationView(APIView):
@@ -31,7 +28,7 @@ def authorization(request):
 
 
 @api_view(['POST'])
-@extension_user_auth
+@app_user_auth
 def confirm_code(request):
     serializer = ConfirmCodeSerializer(data=request.data)
     success = serializer.verify_code(request.user)
@@ -56,19 +53,20 @@ def finish_account_recovery(request):
     serializer = ConfirmCodeSerializer(data=request.data)
     token = serializer.verify_recovery_code()
     if token:
-        return Response({'Auth': token}, status=status.HTTP_200_OK)
+        return Response({'message': 'Successfully recovery',
+                         'Auth': token}, status=status.HTTP_200_OK)
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
-@extension_user_auth
+@app_user_auth
 def change_password(request):
     user = request.user
-    form = SetPasswordForm(user=user, data=request.data)
+    form = AppUserPasswordChangeForm(user=user, data=request.data)
     if form.is_valid():
-        print(form.save())
-        # ExtensionUser.generate_token()
-        return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+        user = form.save()
+        return Response({'message': 'Password changed successfully',
+                         'Auth': user.jwt_access_token}, status=status.HTTP_200_OK)
     else:
         return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)

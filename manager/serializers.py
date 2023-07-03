@@ -1,6 +1,6 @@
 from .celery import send_confirm_code_on_email, send_recovery_code_on_email
 from rest_framework import serializers
-from .models import ExtensionUser, Proxy, ConfirmationCode
+from .models import AppUser, Proxy, ConfirmationCode
 from django.contrib.auth import authenticate
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Subquery
@@ -14,8 +14,13 @@ class RegistrationSerializer(serializers.Serializer):
     user = None
 
     def validate_username(self, value):
-        if ExtensionUser.objects.filter(username=value).exists():
+        if AppUser.objects.filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
+        return value
+
+    def validate_email(self, value):
+        if AppUser.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email is already taken.")
         return value
 
     def create_confirm_code(self):
@@ -24,12 +29,12 @@ class RegistrationSerializer(serializers.Serializer):
         send_confirm_code_on_email.delay(self.user.email, code.code)
 
     def create(self, validated_data):
-        user = ExtensionUser.objects.create_user(
+        user = AppUser.objects.create_user(
             username=validated_data['username'],
             password=validated_data['password'],
             email=validated_data['email'],
         )
-        user.jwt_access_token = ExtensionUser.generate_token(
+        user.jwt_access_token = AppUser.generate_token(
             user.username,
             user.password,
         )
@@ -68,7 +73,7 @@ class ConfirmCodeSerializer(serializers.Serializer):
             self.email = data.get('email')
         super().__init__(**kwargs)
 
-    def verify_code(self, user: ExtensionUser):
+    def verify_code(self, user: AppUser):
         try:
             code_model = ConfirmationCode.objects.get(user_link=user, type='registration')
             if code_model.code == self.code:
@@ -83,7 +88,7 @@ class ConfirmCodeSerializer(serializers.Serializer):
 
     def start_recover(self):
         try:
-            user = ExtensionUser.objects.get(email=self.email)
+            user = AppUser.objects.get(email=self.email)
             code_model = ConfirmationCode.objects.create(code=random.randint(10000, 99999),
                                                          user_link=user, type='recovery')
             send_confirm_code_on_email.delay(user.email, code_model.code)
@@ -94,7 +99,7 @@ class ConfirmCodeSerializer(serializers.Serializer):
 
     def verify_recovery_code(self):
         try:
-            user = ExtensionUser.objects.get(email=self.email)
+            user = AppUser.objects.get(email=self.email)
             code_models = ConfirmationCode.objects.filter(user_link=user, type='recovery')
             values = [code_model.code for code_model in code_models]
             if self.code in values:
